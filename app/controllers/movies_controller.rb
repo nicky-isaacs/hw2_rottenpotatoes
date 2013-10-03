@@ -1,5 +1,7 @@
 class MoviesController < ApplicationController
 
+  before_filter :setup
+
   def show
     id = params[:id] # retrieve movie ID from URI route
     @movie = Movie.find(id) # look up movie by unique ID
@@ -7,12 +9,10 @@ class MoviesController < ApplicationController
   end
 
   def index
-    if params[:order_column]
-      params[:order_direction] ||= "ASC"
-      @movies = Movie.all.order "#{params[:order_column]} #{params[:order_direction]}"
-    else
-      @movies = Movie.all
-    end
+    @movies = Movie.where(rating: @selected_ratings)
+    params[:order_direction] ||= "ASC"
+    @movies = @movies.order "#{params[:order_column]} #{params[:order_direction]}" if params[:order_column]
+
   end
 
   def new
@@ -41,6 +41,23 @@ class MoviesController < ApplicationController
     @movie.destroy
     flash[:notice] = "Movie '#{@movie.title}' deleted."
     redirect_to movies_path
+  end
+
+  private
+
+  def setup
+    @rating_options = ['G','PG','PG-13','R']
+    if params[:ratings]
+      @selected_ratings = session[:movie_ratings] = params[:ratings].keys
+    else
+      @selected_ratings = session[:movie_ratings] || ['G','PG','PG-13','R']
+    end
+
+    if params[:order_column]
+      @header_css = "hilite"
+    else
+      @header_css = ""
+    end
   end
 
 end
